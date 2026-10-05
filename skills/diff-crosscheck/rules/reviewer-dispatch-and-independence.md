@@ -55,7 +55,7 @@ Codex 已完成，請 subagent 先讀 codex-review.md，再補充遺漏的部分
 - Level: `MUST`
 - subagent 必須是全新 context 的 agent，不可 fork 或延續主對話；宿主提供不具檔案編輯工具的 agent 類型時，優先使用該類型。
 - brief 必須明令 reviewer 不得修改任何檔案，不得執行 checkout、switch、reset、stash、clean、commit、push，也不得在 PR 留言或改動遠端狀態。
-- Codex 以唯讀 sandbox 執行，由複核腳本負責強制。
+- Codex 以唯讀 sandbox 執行，由複核腳本負責強制，並從 session 紀錄檢查每一輪的實際 sandbox；腳本回傳 `unsafe_sandbox` 時，比照工作目錄有變動的情況處理。
 - 啟動 reviewer 前，以 `check_worktree.py --save` 記錄受審 repo 的工作目錄快照；兩者結束後以 `--compare` 比對；發現變動時，在複核狀態中揭露是哪一方造成（可判斷時），將該方結果標為不可信並視為未完成（依 Rule 4 揭露），請使用者決定如何處理，不自行還原使用者的檔案。
 
 ## Good Example
@@ -78,8 +78,9 @@ Codex 已完成，請 subagent 先讀 codex-review.md，再補充遺漏的部分
 # Rule 4 - 任何一方無法完成時，必須如實揭露，不可冒充或捏造
 
 - Level: `MUST`
-- 下列情況視為該 reviewer 未完成：未安裝或未登入、逾時、崩潰、輸出為空、輸出未依 brief 格式回應。
-- 逾時或暫時性錯誤可以重試一次；重試仍失敗就記錄原因。
+- 下列情況視為該 reviewer 未完成：未安裝或未登入、逾時、崩潰、輸出為空、輸出未依 brief 格式回應；Codex 複核腳本回傳 `completed` 以外的狀態時，也視為未完成。
+- Codex 的等待、接續與改用備援模型由複核腳本負責，主 agent 不從頭重跑 Codex；腳本回傳 `capacity` 時依 Rule 6 處理，其他狀態直接揭露狀態 JSON 的 `reason`，並把 `action` 轉述給使用者。
+- Subagent 逾時或崩潰時，可以重新啟動一次；仍失敗就記錄原因。
 - 不可用主 agent 自己的意見冒充 reviewer 的結果，也不可捏造任何複核內容。
 - 只完成一份時，最終報告寫明「僅完成單一複核（缺少：<reviewer>，原因：<原因>）」；兩份都未完成時，寫明「未經獨立複核」。
 - 宿主沒有 subagent 能力時，標示缺少 subagent 複核；除非使用者同意改用其他獨立 reviewer，否則不以其他方式替代。
@@ -92,7 +93,7 @@ Codex 已完成，請 subagent 先讀 codex-review.md，再補充遺漏的部分
 ```md
 複核狀態：僅完成單一複核
 - Subagent：完成
-- Codex CLI：未完成——`codex` 指令不存在（未安裝），未重試
+- Codex CLI：未完成（auth）——Codex 未登入或登入已失效。建議：執行 `codex login` 後重跑。
 ```
 
 ## Bad Example
@@ -124,4 +125,33 @@ Codex 已完成，請 subagent 先讀 codex-review.md，再補充遺漏的部分
 
 ```md
 請注意安全。
+```
+
+# Rule 6 - Codex 容量不足且自動重試用盡時，由使用者決定是否換模型
+
+- Level: `MUST`
+- 只有使用者事先設定的備援模型（`DIFF_REVIEW_CODEX_FALLBACK_MODELS`）可以自動使用，由複核腳本負責；主 agent 不自行挑選模型，也不默默降級為單一複核。
+- 腳本回傳 `capacity` 時就詢問使用者，不必等 subagent 結束：列出狀態 JSON `attempts` 中已嘗試的模型與 `model_candidates`，並註明候選模型來自 Codex 的模型目錄，不保證此帳號可用。
+- 使用者指定模型時，加上 `--resume <session_id> --model <模型> --out-dir <out_dir>` 重新執行複核腳本，接續原 session；`session_id` 與 `out_dir` 取自狀態 JSON。
+- 使用者決定不換模型時，依 Rule 4 記錄 Codex 未完成，原因寫「模型容量不足」。
+
+## Good Example
+
+- 這個例子是好的，因為它列出已嘗試與候選的模型、說明候選不保證可用，並以 `--resume` 接續原 session。
+
+```md
+Codex 複核因模型容量不足未完成：gpt-5.6-sol 已嘗試 2 次（含接續 1 次），未設定備援模型。
+Codex 模型目錄中尚未嘗試的模型（不保證此帳號可用）：gpt-6-astra、gpt-6-sol、gpt-6-luna
+要改用哪個模型接續？選擇不換時，最終報告會標示僅完成單一複核。
+
+使用者：gpt-6-astra
+執行：uv run scripts/run_codex_review.py --repo ~/work/shop-web --brief /tmp/runs/web-a1b2c3d/reviewer-brief.md --resume 01a10ad7-bb88-75d1-abd4-ca0498c98e84 --model gpt-6-astra --out-dir /tmp/codex-review-x7k2
+```
+
+## Bad Example
+
+- 這個例子是壞的，因為主 agent 自行挑選模型並從頭重跑，既浪費已完成的進度，也沒有讓使用者決定。
+
+```md
+Codex 容量不足，我改用 gpt-6-luna 從頭重跑一次複核。
 ```

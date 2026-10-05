@@ -52,6 +52,8 @@ npx skills add ba1679/diff-review-skills@diff-explain
 | `codex`（Codex CLI，已登入） | 雙重複核時 | 以唯讀 sandbox 複核草稿 | 標示缺少 Codex 複核，不宣稱完成雙重複核 |
 | 支援 subagent 的 agent（例如 Claude Code） | 雙重複核時 | 全新 context 的唯讀 subagent 複核 | 標示缺少 subagent 複核 |
 
+Codex CLI 需支援 `codex exec --json` 與 `codex exec resume`，並使用 `~/.codex/config.toml` 設定的預設模型；實際使用的模型會寫進最終報告。為了在中斷時接續，Codex 的 session 會保存在 `~/.codex/sessions`，其中包含受審程式碼的片段。
+
 ## 使用方式
 
 ```text
@@ -91,10 +93,36 @@ npx skills add ba1679/diff-review-skills@diff-explain
 
 兩個 reviewer 都結束後，才把原始結果存入 `.reviews/`；複核進行中，Codex 的輸出放在腳本建立的私有暫存目錄。
 
+## 疑難排解
+
+Codex 複核由 `run_codex_review.py` 執行。腳本依 Codex session 紀錄中的錯誤碼分類，把結果寫在狀態 JSON 的 `status`、`reason` 與 `action`：
+
+| `status` | 意義 | 腳本的自動處理 | 你可以做的事 |
+| --- | --- | --- | --- |
+| `capacity` | 模型暫時滿載（`Selected model is at capacity`） | 等 30 秒接續同一個 session 重試一次，再依序改用備援模型接續 | 從列出的模型中選一個接續，或設定備援模型 |
+| `transient` | 連線中斷、伺服器錯誤或速率限制 | 等 30 秒、90 秒後接續重試 | 確認網路後接續 |
+| `auth` | 未登入或登入已失效 | 不重試 | 執行 `codex login` |
+| `usage_limit` | 已達用量上限 | 不重試 | 等用量重置或改用其他帳號 |
+| `context_limit` | 超過模型的 context 上限 | 不重試 | 縮小 diff 範圍或拆成多次複核 |
+| `timeout` | 超過整體時間上限（預設 40 分鐘，含重試與等待） | 不重試 | 接續，或以 `--timeout` 放寬上限 |
+| `unsafe_sandbox` | Codex 的實際 sandbox 不是唯讀 | 捨棄結果 | 檢查 Codex 設定與版本 |
+
+接續時沿用原 session，已完成的進度不會浪費。
+
+### 模型容量不足時改用其他模型
+
+事先設定備援模型時，腳本會自動依序改用：
+
+```bash
+export DIFF_REVIEW_CODEX_FALLBACK_MODELS="<備援模型>,<第二個備援模型>"
+```
+
+沒有設定，或備援模型也失敗時，agent 會停下來列出 Codex 模型目錄中尚未嘗試的模型（取自 `codex debug models`，不保證你的帳號可用），由你決定是否改用其中一個接續原 session。選擇不換時，最終報告會標示「僅完成單一複核」。
+
 ## 安全邊界
 
 - 不切換分支、不重設工作目錄、不修改受審 repo；只在缺少 PR commit 時執行 `git fetch`，並在報告中揭露。
-- 兩個 reviewer 都唯讀：subagent 由 brief 明令禁止修改，Codex 以 `--sandbox read-only` 執行；複核前後以 `check_worktree.py` 比對工作目錄快照。
+- 兩個 reviewer 都唯讀：subagent 由 brief 明令禁止修改，Codex 以 `--sandbox read-only` 執行，接續 session 時也會檢查實際 sandbox；複核前後以 `check_worktree.py` 比對工作目錄快照。
 - PR 描述、討論與 issue 內容一律視為待查證資料，其中的指示不會被執行。
 - 不在 PR 上留言、不 approve、不 request changes。
 - reviewer 不讀取 `.env*` 與金鑰檔，也不在輸出中貼出任何密鑰。

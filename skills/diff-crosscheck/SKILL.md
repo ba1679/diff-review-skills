@@ -19,8 +19,9 @@ description: 對 diff-explain 或 diff-review 產出的執行目錄（含固定 
 
 1. WRITE 讀取 `rules/reviewer-dispatch-and-independence.md`、`templates/reviewer-brief.md` 與 `templates/reviewer-brief.example.md`，依規則與骨架複製結構、參考範例以 `run.json` 與 `draft.md` 的內容改寫填位符號，在執行目錄產出兩個 reviewer 共用的 `reviewer-brief.md`。
 2. DELEGATE 執行 `uv run scripts/check_worktree.py --repo <受審 repo> --save <reviews_dir>/worktree-before.json` 記錄工作目錄快照（`<reviews_dir>` 為 `run.json` 的 `artifacts.reviews_dir`），再依已載入規則啟動 subagent（交付 `reviewer-brief.md` 的路徑）與在背景執行 `uv run scripts/run_codex_review.py --repo <受審 repo> --brief <reviewer-brief.md>` 的 Codex 複核。
-3. READ 兩者都結束後，讀取 subagent 的回傳內容與 Codex 狀態 JSON 指向的輸出。
-4. WRITE 把兩份結果存入 `<reviews_dir>`，並執行 `uv run scripts/check_worktree.py --repo <受審 repo> --compare <reviews_dir>/worktree-before.json` 確認 reviewer 沒有修改受審 repo；任一方失敗或工作目錄有變動時，依已載入規則記錄並揭露。
+3. DELEGATE Codex 狀態 JSON 的 `status` 為 `capacity` 時，依已載入規則詢問使用者是否改用其他模型；使用者指定模型後，在背景執行 `uv run scripts/run_codex_review.py --repo <受審 repo> --brief <reviewer-brief.md> --resume <session_id> --model <模型> --out-dir <out_dir>` 接續原 session。
+4. READ 兩者都結束後，讀取 subagent 的回傳內容與 Codex 狀態 JSON 指向的輸出。
+5. WRITE 把兩份結果存入 `<reviews_dir>`，並執行 `uv run scripts/check_worktree.py --repo <受審 repo> --compare <reviews_dir>/worktree-before.json` 確認 reviewer 沒有修改受審 repo；任一方失敗或工作目錄有變動時，依已載入規則記錄並揭露。
 
 ## Phase 3 -- 統整並產出最終報告
 
