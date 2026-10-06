@@ -5,8 +5,8 @@
 - 使用者沒給的部分不要自行推算；下列一律由腳本固定、不在這裡重做：PR 實際回報的 base / head commit、PR 與自訂範圍並存時的優先序、單側 ref 另一側的補齊、預設 `origin/main`、目前分支、detached HEAD，以及各側來源標示。
 - 需要你判斷的只有 base / head 的角色：
   - 使用者以 `A -> B`、「從 A 到 B」、「A 和 B 的差異」描述時，A 為 base、B 為 head；語意明確相反（例如「A 相對於 B 改了什麼」）時以語意為準。
-  - 只提供單一 ref 時，「since X」「從 X 之後」「X 以來」把 X 當 base；「review X」「看 X 分支」把 X 當 head。
-  - 角色無法判斷時先詢問使用者，不可自行假設。
+  - 只提供單一 ref 時，「since X」「從 X 之後」「X 以來」把 X 當 base；「review X」「看 X 分支」「看懂 X」「解釋 X」把 X 當 head。
+  - 不在上述語意內（例如「整理 X」「分析 X」）或角色無法判斷時，先詢問使用者，不可自行假設。
 
 ## Good Example
 
@@ -26,7 +26,7 @@
 
 ```md
 輸入：幫我分析 release/3.2
-解讀：「分析」沒有 since / review 語意，仍直接當成 head 繼續。
+解讀：「分析」不在 base / head 的語意內，仍直接當成 head 繼續。
 ```
 
 # Rule 2 - 比較方式與未提交改動維持預設，只依使用者明確要求切換
@@ -60,17 +60,17 @@ merge-base 模式只有 3 個檔案，看起來不完整，改用 --mode direct 
 # Rule 3 - 腳本報錯或有 warnings 時停下來交給使用者，不可自行換範圍
 
 - Level: `MUST`
-- 腳本失敗時，轉述它的錯誤與提示後停止；不可自行換 base、改審工作目錄或另一個 PR 後重跑，即使提示中已列出可能的替代 ref。
+- 腳本失敗時，轉述它的錯誤與提示後停止；可以附上以唯讀指令查到的原因或可選的 ref 供使用者選擇，但不可自行採用，也不可換 base、改審工作目錄或另一個 PR 後重跑。
 - `run.json` 的 `warnings` 不為空時，先向使用者顯示並取得確認，才進入 Phase 2。
 - `run.json` 的 `notes` 全部寫入範圍顯示的「備註」。
 
 ## Good Example
 
-- 這個例子是好的，因為它把報錯與 warnings 都當成停點，交給使用者決定。
+- 這個例子是好的，因為它把報錯與 warnings 都當成停點，附上查到的原因與選項，但交給使用者決定。
 
 ```md
-無法固定比較範圍：找不到 `origin/main`。此 repo 的 origin/HEAD 指向 `origin/develop`。
-請指定 base，例如「base=origin/develop」，我再繼續。
+無法固定比較範圍：找不到 `origin/main`。
+經查此 repo 的 origin/HEAD 指向 `origin/develop`。請指定 base，例如「base=origin/develop」，我再繼續。
 
 比較範圍已固定，但有一項警告：固定範圍的檔案清單與 GitHub PR 不一致，可能是 PR 在讀取後有新 push。
 要以目前固定的 head（a1b2c3d4e5f6）繼續，還是重新讀取 PR？
