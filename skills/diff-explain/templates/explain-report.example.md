@@ -19,7 +19,7 @@
 
 ## 1. 改動摘要
 
-**一句話**：為了讓使用者在結帳失敗後不必重新選購【需求明訂】PR #482 描述「結帳失敗後不要清空購物車」，送出失敗後改為保留購物車並提供重試，不再自動清空【程式碼證實】[checkoutMachine.ts#L80-L97](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/checkoutMachine.ts#L80-L97)。
+**一句話**：送出失敗後保留購物車並可直接重試【程式碼證實】[checkoutMachine.ts#L80-L97](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/checkoutMachine.ts#L80-L97)，讓使用者不必重新選購【需求明訂】PR #482 描述「結帳失敗後不要清空購物車」。
 
 ### 改動群組
 
@@ -32,24 +32,19 @@
 ### 送出失敗保留購物車並可重試（行為變更）
 
 - 目的：送出失敗時保留使用者已選的商品，並讓使用者可以直接重試。
-- 必要性：修改前 `submitting` 的錯誤轉移直接呼叫 `clearCart()`【程式碼證實】[checkoutMachine.ts#L52-L58](https://github.com/acme/shop-web/blob/7e6f5d4c3b2a19081726354a5b6c7d8e9f012345/src/checkout/checkoutMachine.ts#L52-L58)，任何錯誤都會清空購物車。
-- 不改的後果：網路不穩時，使用者每次重試都要重新選購【程式碼證實】修改前的錯誤轉移無條件呼叫 `clearCart()`，[修改前 checkoutMachine.ts#L52-L58](https://github.com/acme/shop-web/blob/7e6f5d4c3b2a19081726354a5b6c7d8e9f012345/src/checkout/checkoutMachine.ts#L52-L58)。
-- 證據：新增 `error` 狀態與 `RETRY` 轉移【程式碼證實】[checkoutMachine.ts#L80-L97](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/checkoutMachine.ts#L80-L97)；驗收情境「付款失敗後購物車內容維持不變」【需求明訂】`spec.md` Scenario「付款失敗」。
+- 證據：修改前的錯誤轉移呼叫 `clearCart()`；修改後新增 `error` 狀態與 `RETRY` 轉移【程式碼證實】[修改前 checkoutMachine.ts#L52-L58](https://github.com/acme/shop-web/blob/7e6f5d4c3b2a19081726354a5b6c7d8e9f012345/src/checkout/checkoutMachine.ts#L52-L58)、[修改後 checkoutMachine.ts#L80-L97](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/checkoutMachine.ts#L80-L97)。
+- 不改的後果：網路失敗時，原本的錯誤處理會清空購物車，使用者需重新選購。
 
 ### 購物車金額計算抽成 hook（重構）
 
 - 目的：讓結帳頁與購物車摘要共用同一份金額計算。
-- 必要性：修改前兩處各自計算金額，新增的重試流程需要在結帳頁重新計算【程式碼證實】[修改前 CartSummary.tsx#L20-L34](https://github.com/acme/shop-web/blob/7e6f5d4c3b2a19081726354a5b6c7d8e9f012345/src/cart/CartSummary.tsx#L20-L34)。
-- 不改的後果：重試流程需要第三份金額計算，日後折扣規則容易分歧【推測】依據：目前兩份計算邏輯相同，但沒有共用。
 - 預期一致的行為：`calcTotal` 的輸入與輸出、四捨五入方式、空購物車回傳 0、折扣套用順序；`useCart` 的回傳形狀不變。
-- 支持證據：修改前後的計算邏輯逐段對照相同【程式碼證實】[useCart.ts#L12-L28](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/cart/useCart.ts#L12-L28)；`cart.test.ts` 的 6 個案例未修改，且涵蓋空購物車【程式碼證實】`git diff --stat` 中沒有 `cart.test.ts`。
+- 支持證據：修改前後的計算與四捨五入邏輯相同【程式碼證實】[修改前 CartSummary.tsx#L20-L34](https://github.com/acme/shop-web/blob/7e6f5d4c3b2a19081726354a5b6c7d8e9f012345/src/cart/CartSummary.tsx#L20-L34)、[修改後 useCart.ts#L12-L28](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/cart/useCart.ts#L12-L28)。
 - 尚未證實：折扣為負數的錯誤路徑沒有測試涵蓋。
 
 ### 重試文案與測試（配套修改）
 
 - 目的：提供重試按鈕文案，並補上失敗狀態的測試。
-- 必要性：`CheckoutPage.tsx` 使用新的 i18n key `checkout.retry`【程式碼證實】[CheckoutPage.tsx#L64](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/CheckoutPage.tsx#L64)。
-- 不改的後果：按鈕會直接顯示 key 字串，失敗流程也沒有回歸測試【程式碼證實】`git show 7e6f5d4c3b2a:public/locales/zh-TW.json | grep checkout.retry` 沒有輸出。
 - 證據：`zh-TW.json` 新增 2 個 key；`checkoutMachine.test.ts` 新增 3 個案例【程式碼證實】`diff.patch`。
 
 ## 2. 圖解改動
