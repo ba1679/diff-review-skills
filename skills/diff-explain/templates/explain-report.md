@@ -27,22 +27,22 @@
 | --- | --- | --- |
 | {{GROUP_NAME}} | {{GROUP_TYPE}} | {{GROUP_FILES}} |
 
-<!-- 每個非重構群組各複製一份下列區塊；沒有重構群組時刪除「（重構）」區塊 -->
+<!-- 各群組複製對應區塊，無對應群組時刪除區塊。必要性、不改的後果僅在提供額外資訊時保留；重構的「尚未證實」僅在有影響結論的重要未驗證事項時保留。 -->
 ### {{GROUP_NAME}}（{{GROUP_TYPE}}）
 
 - 目的：{{GROUP_PURPOSE}}
+- 證據：{{GROUP_EVIDENCE}}
 - 必要性：{{GROUP_NECESSITY}}
 - 不改的後果：{{GROUP_CONSEQUENCE}}
-- 證據：{{GROUP_EVIDENCE}}
 
 ### {{REFACTOR_GROUP_NAME}}（重構）
 
 - 目的：{{REFACTOR_PURPOSE}}
-- 必要性：{{REFACTOR_NECESSITY}}
-- 不改的後果：{{REFACTOR_CONSEQUENCE}}
 - 預期一致的行為：{{EXPECTED_INVARIANTS}}
 - 支持證據：{{INVARIANT_EVIDENCE}}
 - 尚未證實：{{UNVERIFIED_INVARIANTS}}
+- 必要性：{{REFACTOR_NECESSITY}}
+- 不改的後果：{{REFACTOR_CONSEQUENCE}}
 
 ## 2. 圖解改動
 
@@ -55,6 +55,7 @@
 {{MERMAID_DIAGRAM}}
 ```
 
+<!-- 使用樣式區分類型時保留圖例 -->
 圖例：{{DIAGRAM_LEGEND}}
 
 {{DIAGRAM_EXPLANATION}}
