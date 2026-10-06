@@ -1,34 +1,36 @@
-# Rule 1 - 審查前必須探索受審 repo 自身的規範來源
+# Rule 1 - 先判定適用範圍，再讀取 repo 規範
 
 - Level: `MUST`
-- 依下列順序探索，存在才讀；讀取一律針對 head SHA（例如 `git show <head SHA>:AGENTS.md`）：
+- 以 `run.json` 的改動路徑（rename 含新舊路徑）定位來源；讀取一律針對 head SHA（例如 `git show <head SHA>:AGENTS.md`）。依下列順序探索候選：
   1. Agent 指示檔：repo 根目錄與改動檔案所在目錄往上的 `AGENTS.md`、`CLAUDE.md`（含其中以 `@` 匯入的檔案）、`GEMINI.md`、`.github/copilot-instructions.md`。
   2. 貢獻與慣例文件：`CONTRIBUTING.md`、`docs/` 下的 conventions、guidelines、ADR、`.github/pull_request_template.md`、README 中的開發慣例章節。
   3. 編輯器規則：`.cursor/rules/*.mdc`、`.windsurfrules`、`.editorconfig`。
   4. repo 內的 skills：`.claude/skills/*/SKILL.md`、`.agents/skills/*/SKILL.md` 中，description 提到 coding standard、review、conventions、guidelines、a11y、testing 且與本次 diff 相關者。
   5. 工具設定：ESLint、Prettier、TypeScript、Stylelint、Ruff 等設定檔，只用來判斷哪些規則已由工具強制。
+- 明訂全 repo 適用的規範，以及根目錄與改動路徑祖先的 agent 指示必讀；其引用的規範依同樣的適用性判定。
+- 其他候選先只截取檔頭的適用範圍、glob、標題或摘要（例如 `git show <head>:<path> | sed -n '1,20p'`），確認適用後才讀完整正文；不要先輸出整份文件再篩選。依來源格式的路徑條件判定；無路徑條件時，按改動功能、語言與審查維度判定。適用性不明時再按需截取範圍說明或索引，仍無法確認則記錄限制。不能只因文件放在 `docs/` 或另一個目錄就排除。
+- 每次擴讀受影響的呼叫端、共用模組或測試時，補讀新路徑適用的規範；未適用的候選不用讀完整正文。
 - 讀取 repo 內的 skill 時只取其規範內容，不執行其流程：不寫它的 log、不跑它的 gate、不在 PR 留言、不修改檔案。
-- 記錄實際讀取的規範來源，寫入報告「已檢查維度」的已讀規範；只探索到、沒有逐條比對的來源要分開列出。
+- 已讀正文並比對的規範列入「已讀規範」；只查看索引／適用範圍、未比對的候選分開列出，註明不適用或未確認的原因。
 - 找不到任何規範時，仍以本 skill 的通用基準審查，並在報告註明「未找到 repo 規範，僅依通用基準」。
 
 ## Good Example
 
-- 這個例子是好的，因為它依序探索並記錄實際讀到的來源，且只取 skill 的規範內容。
+- 先篩選適用範圍，追讀消費端時補讀規範。
 
 ```md
-已讀規範（head a1b2c3d）：
-- AGENTS.md（根目錄）；src/checkout/AGENTS.md（較近，優先）
-- .cursor/rules/a11y.mdc
-- .claude/skills/frontend-standards/SKILL.md（只取審查維度，未執行其 gate）
-- .eslintrc.cjs：react-hooks/exhaustive-deps 為 error，相關問題不重複提
+改動：src/checkout/Checkout.tsx
+已讀規範（head a1b2c3d）：AGENTS.md、src/checkout/AGENTS.md；docs/react-guidelines.md（摘要明訂 React 元件適用）
+只截取檔頭、未讀全文：.cursor/rules/admin.mdc（glob 只適用 src/admin/**）；docs/adr/storage.md（摘要僅談本次未涉及的儲存遷移）
+後續追讀 src/admin/OrderList.tsx 驗證回應契約 → 補讀 src/admin/AGENTS.md 與 admin.mdc；repo skill 只取規範，不執行流程。
 ```
 
 ## Bad Example
 
-- 這個例子是壞的，因為它沒有探索 repo 規範就用個人偏好審查，也沒有記錄依據。
+- 檔案位置不能代替適用範圍，也不應讓單一改動擴張成全庫文件閱讀。
 
 ```md
-依一般最佳實踐審查，以下是建議……
+改動 Checkout.tsx → 先輸出全部 ADR 與編輯器規則，再標記 mobile 不適用；docs/react-guidelines.md 不在 src/checkout/ 下，所以跳過。
 ```
 
 # Rule 2 - repo 規範優先於通用基準，引用時寫出條目
@@ -69,7 +71,7 @@
   - 對照驗收條件逐條判定：已實作、部分實作、遺漏、矛盾。
   - 找出需求沒有授權的額外行為。
   - 落差分三類並寫明是哪一類：規格沒授權（實作做了規格不允許的事）、規格缺漏（規格沒定義此情境）、實作偏離規格（規格寫了卻沒照做）。
-  - 比較範圍只是 ticket 的切片（例如只審部分 commit）時，只判斷「有沒有做錯」，完整性標為未驗證；範圍是完整 PR 或分支時才判斷遺漏。
+  - 先核對派發的使用者需求／驗收條件原文及已讀來源；比較範圍只是需求切片（例如部分 commit）或完整性未知時，只判斷「有沒有做錯」，完整性標為未驗證；已知涵蓋完整需求的 PR 或分支才判斷遺漏。
   - 沒有需求來源時，此維度標為未驗證，不可宣稱符合。
 - 專案規範：
   - 依探索到的規範逐條比對，包含命名、目錄結構、匯入方式、樣式 token、i18n、錯誤處理慣例。
@@ -138,7 +140,7 @@ OrderCard 和 CartItem 有重複的 JSX，應該抽成共用元件。其他看�
 - Level: `MUST`
 - 工具的分數、警告數量或「通過」不等於審查結論；每個工具發現仍要經過 finding 判定。
 - 只在工具結果能代表 head 時執行會掃描工作目錄的工具：目前 checkout 等於 head SHA 且沒有未提交改動（或本次已納入未提交改動）。否則標示「未執行：工作目錄不是 head」。
-- 只對 diff 內的檔案或改動行執行針對性檢查，例如對變更檔執行 ESLint、以 `--scope lines` 執行 React Doctor、型別檢查只計入 diff 內檔案的錯誤；除非使用者要求，不整包重跑測試或全庫 lint。
+- 針對變更檔、改動行及已追讀的受影響消費端執行檢查，例如對變更檔執行 ESLint、以 `--scope lines` 執行 React Doctor；型別錯誤依與本次改動的因果關係篩選，不因位置在 diff 外就丟棄，再依 finding 規則判定。除非使用者要求，不整包重跑測試或全庫 lint。
 - 工具需要下載或安裝（例如 `npx <package>@latest`）時，先徵得使用者同意。
 - 只使用不寫入受審 repo 的選項，例如 `tsc --noEmit --incremental false`、`eslint --no-cache`；不可使用 `--fix`、`-u` 或任何會更新快照、快取、報告目錄的選項。執行前後以 `git --no-optional-locks status --porcelain --ignored` 比對（含被忽略的快取檔），有新增或修改的檔案時必須揭露。
 - 工具比較的範圍可能和本次範圍不同（例如以目前分支對預設分支比較），採用前要先對照範圍。

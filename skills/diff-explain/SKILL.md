@@ -1,6 +1,6 @@
 ---
 name: diff-explain
-description: 協助開發者看懂一段 git diff：固定 base / head SHA 後，以程式碼證據說明改動要解決的問題、修改後行為、功能分組與必要性，並依資訊價值繪製 Mermaid 改動圖；只說明改動，不產出 review findings。使用者說「這個 PR 在做什麼」「幫我看懂這個 PR／這段 diff」「解釋這次改動」「A 和 B 差在哪」「A -> B 改了什麼」「畫改動圖」「what changed / explain this PR」，或被 diff-review 串接時使用。
+description: 協助開發者看懂一段 git diff：固定 base / head SHA 後，以程式碼證據說明改動要解決的問題、修改後行為、功能分組與必要性，並依資訊價值繪製 Mermaid 改動圖；只說明改動，不產出 review findings。使用者說「這個 PR 在做什麼」「幫我看懂這個 PR／這段 diff」「解釋這次改動」「A 和 B 差在哪」「A → B 改了什麼」「畫改動圖」「what changed / explain this PR」，或被 diff-review 串接時使用。
 ---
 
 # Diff 改動理解
