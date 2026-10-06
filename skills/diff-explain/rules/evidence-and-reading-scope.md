@@ -79,6 +79,7 @@ PR 附圖：送出失敗後回到「編輯中」狀態
 - 新增或修改後的行使用 head SHA；被刪除或修改前的行使用 base SHA（merge-base 模式用 merge-base SHA）。
 - `repo.link_base` 為空時，使用 `path:line`，並註明「行號以 <引用版本短 SHA> 為準」。
 - 本次納入未提交改動時，head 端改在工作目錄搜尋與閱讀，例如 `git grep -n --untracked <pattern>`；被修改或新增的行引用為 `path:line（工作目錄，指紋 <fingerprint 前 12 碼>）`，指紋取自 `run.json` 的 `uncommitted.fingerprint`；base 端與未修改的行仍使用固定 SHA。
+- 未提交範圍以保存的 `diff.patch` 為權威；閱讀前與交付前核對目前 diff 的檔案清單及內容（含未追蹤檔案）仍與 patch 一致。`fingerprint` 是保存的 patch 指紋，不能證明即時工作目錄未變；不一致時揭露原因並停止，不引用舊指紋替新內容作證。
 
 ## Good Example
 
@@ -86,10 +87,12 @@ PR 附圖：送出失敗後回到「編輯中」狀態
 修改後：[useCart.ts#L40-L46](https://github.com/acme/web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/cart/useCart.ts#L40-L46)
 修改前：[useCart.ts#L35-L39](https://github.com/acme/web/blob/1234567890abcdef1234567890abcdef12345678/src/cart/useCart.ts#L35-L39)
 未提交：src/cart/useCart.ts:40（工作目錄，指紋 9f8e7d6c5b4a）
+閱讀前與交付前核對目前 diff（含未追蹤檔案），均與保存的 diff.patch 相同。
 ```
 
 ## Bad Example
 
 ```md
 [useCart.ts:40](https://github.com/acme/web/blob/feature/cart/src/cart/useCart.ts#L40)
+工作目錄已被再次編輯，仍用先前 run.json 的 fingerprint 引用目前內容。
 ```

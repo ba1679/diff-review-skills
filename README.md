@@ -9,7 +9,7 @@
 | Skill | 用途 | 單獨使用範例 |
 | --- | --- | --- |
 | `diff-explain` | 固定比較範圍，以證據說明改動並繪製 Mermaid 改動圖；不產出 findings | 「幫我看懂這個 PR」「v2.3.0 -> feature/login 改了什麼」 |
-| `diff-review` | 入口：串接 `diff-explain` → 依審查維度產出 P0–P3 建議修正 → 串接 `diff-crosscheck` | 「review 這個 PR」「做有證據的 code review」 |
+| `diff-review` | 入口：串接 `diff-explain` → 派發 review agent 初審 → 串接 `diff-crosscheck` | 「review 這個 PR」「做有證據的 code review」 |
 | `diff-crosscheck` | 讓獨立 subagent 與 Codex CLI 平行複核同一份草稿，再對照程式碼統整 | 「用 Codex 複核這個執行目錄的改動說明」 |
 
 ```mermaid
@@ -17,7 +17,9 @@ flowchart LR
   user["使用者輸入：PR URL 或 base / head"] -->|呼叫| review["diff-review"]
   review -->|呼叫| explain["diff-explain"]
   explain -->|資料流| run["執行目錄：run.json、diff.patch、draft.md"]
-  review -->|資料流| run
+  review -->|派發| initial["Review agent 初審"]
+  initial -->|回傳 findings、來源與限制| review
+  review -->|驗收並寫回| run
   review -->|呼叫| cross["diff-crosscheck"]
   cross -->|呼叫| sub["subagent 複核"]
   cross -->|呼叫| codex["Codex CLI 複核"]
@@ -25,6 +27,8 @@ flowchart LR
 ```
 
 三個 skill 之間只透過執行目錄交接；`run.json` 記錄固定的 base / head / merge-base SHA、比較方式、目前 checkout 狀態（`checkout`），以及各 skill 登記、供 reviewer 遵循的規則路徑（`criteria`）。
+
+`diff-review` 內附 `agents/review-agent.md`，由 skill 明確派發給全新 context 的 subagent 執行初審，交付使用者需求與驗收條件原文。Agent 只載入證據與審查判準，按適用路徑與主題選讀 repo 規範；React 等條件規則及完整範例按需載入。納入未提交改動時，閱讀前與交付前核對工作目錄仍符合固定 patch。Agent 只回傳審查章節與交接 metadata，主 agent 驗收後寫回 `draft.md` 與 `run.json`；初審未完成時停止後續流程，其結果不計入獨立雙重複核。
 
 ## 安裝
 
@@ -50,7 +54,7 @@ npx skills add ba1679/diff-review-skills@diff-explain
 | Python 3.10+（建議搭配 `uv`） | 必要 | 執行 `scripts/` 下的腳本（只用標準函式庫） | 無法執行 |
 | `gh`（已 `gh auth login`） | 使用 PR URL 時 | 讀取 PR 的 base / head、描述與討論 | 說明原因並停止，不改用其他範圍 |
 | `codex`（Codex CLI，已登入） | 雙重複核時 | 以唯讀 sandbox 複核草稿 | 標示缺少 Codex 複核，不宣稱完成雙重複核 |
-| 支援 subagent 的 agent（例如 Claude Code） | 雙重複核時 | 全新 context 的唯讀 subagent 複核 | 標示缺少 subagent 複核 |
+| 支援 subagent 的 agent（例如 Claude Code） | `diff-review` 初審及雙重複核時 | 全新 context 的 review agent 初審與獨立 subagent 複核 | 初審無法啟動時停止；獨立複核缺少 subagent 時如實標示 |
 
 Codex CLI 需支援 `codex exec --json` 與 `codex exec resume`，並使用 `~/.codex/config.toml` 設定的預設模型；實際使用的模型會寫進最終報告。為了在中斷時接續，Codex 的 session 會保存在 `~/.codex/sessions`，其中包含受審程式碼的片段。
 
