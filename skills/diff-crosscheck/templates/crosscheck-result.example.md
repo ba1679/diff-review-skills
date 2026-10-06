@@ -15,8 +15,9 @@
 | Reviewer | 狀態 | 實際執行的檢查 | 驗證限制 |
 | --- | --- | --- | --- |
 | Subagent | 完成 | 讀取 diff 全部 hunk、`checkoutMachine.ts` 修改前版本、`useCart` 的 3 個呼叫端 | 未執行測試；無法讀取後端 API |
-| Codex CLI | 完成（gpt-6-astra，6 分 12 秒） | `git show`、`git grep` 共 14 次；讀取 `spec.md` 與 `AGENTS.md` | 無法讀取 Jira 需求；未執行測試 |
+| Codex CLI | 完成 | `git show`、`git grep` 共 14 次；讀取 `spec.md` 與 `AGENTS.md` | 無法讀取 Jira 需求；未執行測試 |
 
+- Codex 模型與重試：gpt-5.6-sol 容量不足，接續重試一次仍失敗；改用使用者預設的備援模型 gpt-6-astra 接續完成。
 - 統整處理：合併 2、採納修正 3（圖 1、摘要 2）、排除 4（不成立 1、個人偏好 2、既有問題 1）、新增 1、待確認 1
 - 工作目錄檢查：HEAD 與工作目錄狀態和複核前相同
 - 原始複核結果：`/tmp/diff-review-runs/shop-web-a1b2c3d4e5f6-20261005T101500.reviews/subagent.md`、`/tmp/diff-review-runs/shop-web-a1b2c3d4e5f6-20261005T101500.reviews/codex.md`
