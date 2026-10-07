@@ -1,8 +1,10 @@
-## 3. 建議修正
+## 建議修正
 
 ### P0 緊急
 
-#### [P0] 逾時後重試可能重複扣款
+<a id="f1"></a>
+
+#### F1 [P0] 逾時後重試可能重複扣款
 
 - 狀態：待驗證疑慮
 - 提出者：草稿
@@ -11,14 +13,17 @@
 - 影響：若後端沒有去重，同一筆訂單會被扣款兩次。
 - 證據：重試時沿用原購物車並重新呼叫 `createOrder()`，未帶任何冪等鍵【程式碼證實】；後端是否去重無法從 repo 內證實。
 - 檢查指令：`git grep -n "createOrder" a1b2c3d4e5f6 -- src/api`
-- 位置：[orderApi.ts#L21-L30](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/api/orderApi.ts#L21-L30)
+- 位置：[checkoutMachine.ts#L40-L46](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/checkoutMachine.ts#L40-L46)（重試回到送出中並呼叫 `createOrder()`）、[orderApi.ts#L21-L30](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/api/orderApi.ts#L21-L30)
+- 圖上節點：圖 2 `api`
 - 依據規範：無
 - 最小修正方向：確認後端是否支援 `Idempotency-Key`；支援時在重試請求帶入同一把鍵。
 - 備註：缺少證據為後端 API 的去重行為；可詢問後端或在測試環境重現逾時後重試。
 
 ### P1 高
 
-#### [P1] 逾時錯誤仍會清空購物車
+<a id="f2"></a>
+
+#### F2 [P1] 逾時錯誤仍會清空購物車
 
 - 狀態：確定問題
 - 提出者：草稿
@@ -28,13 +33,16 @@
 - 證據：新增的 `error` 轉移只涵蓋 `NetworkError` 與 `PaymentDeclined`，`TimeoutError` 分支仍保留修改前的 `clearCart()` 呼叫【程式碼證實】；驗收情境原文「付款失敗時，購物車內容 MUST 維持不變」【需求明訂】`spec.md` Scenario「付款失敗」。
 - 檢查指令：`git show a1b2c3d4e5f6:src/checkout/checkoutMachine.ts | sed -n '88,95p'`
 - 位置：[checkoutMachine.ts#L88-L95](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/checkoutMachine.ts#L88-L95)
+- 圖上節點：圖 2 `machine`、圖 3 `timeout`
 - 依據規範：無（依需求判定）
 - 最小修正方向：移除 `TimeoutError` 分支中的 `clearCart()`，讓逾時與其他錯誤一樣進入 `error` 狀態。
 - 備註：無
 
 ### P2 中
 
-#### [P2] 新增的 `formatPrice` 與既有 `formatCurrency` 承載同一規則
+<a id="f3"></a>
+
+#### F3 [P2] 新增的 `formatPrice` 與既有 `formatCurrency` 承載同一規則
 
 - 狀態：確定問題
 - 提出者：草稿
@@ -44,19 +52,39 @@
 - 證據：兩者都依 locale 以 `Intl.NumberFormat` 格式化金額、小數位相同，且修改理由相同（金額顯示規則）【程式碼證實】。
 - 檢查指令：`git grep -n "Intl.NumberFormat" a1b2c3d4e5f6 -- src`
 - 位置：[CartSummary.tsx#L8-L14](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/cart/CartSummary.tsx#L8-L14)、[currency.ts#L3-L11](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/utils/currency.ts#L3-L11)
+- 圖上節點：圖 2 `summary`
 - 依據規範：`AGENTS.md`「新增元件或工具函式前先搜尋既有實作」
 - 最小修正方向：刪除 `formatPrice`，改用 `formatCurrency`。
 - 備註：此 repo 的 AGENTS.md 規定重複實作在 push 前審查會被擋下。
 
-## 4. 審查涵蓋與驗證限制
+### P3 低
+
+<a id="f4"></a>
+
+#### F4 [P3] `RETRY` 事件以型別斷言送出
+
+- 狀態：確定問題
+- 提出者：草稿
+- 維度：維護性與單一職責
+- 觸發情境：日後改名或移除 `RETRY` 事件時，結帳頁的送出呼叫不會被型別檢查攔下。
+- 影響：事件名稱不一致時，重試按鈕沒有反應，且只能在執行期發現。
+- 證據：`CheckoutEvent` 型別聯集沒有加入 `RETRY`，結帳頁以 `{ type: 'RETRY' } as CheckoutEvent` 送出【程式碼證實】。
+- 檢查指令：`git show a1b2c3d4e5f6:src/checkout/CheckoutPage.tsx | sed -n '60,66p'`
+- 位置：[CheckoutPage.tsx#L63](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/CheckoutPage.tsx#L63)
+- 圖上節點：圖 2 `page`
+- 依據規範：無
+- 最小修正方向：把 `RETRY` 加入 `CheckoutEvent`，移除 `as` 斷言。
+- 備註：無
+
+## 審查涵蓋與驗證限制
 
 ### 需求符合度
 
 | 驗收條件 | 判定 | 證據 |
 | --- | --- | --- |
-| 付款失敗後購物車內容維持不變 | 部分實作 | 逾時錯誤仍會清空，見 P1 |
+| 付款失敗後購物車內容維持不變 | 部分實作 | 逾時錯誤仍會清空，見 F2 |
 | 失敗後顯示重試按鈕 | 已實作 | [CheckoutPage.tsx#L60-L66](https://github.com/acme/shop-web/blob/a1b2c3d4e5f60718293a4b5c6d7e8f9012345678/src/checkout/CheckoutPage.tsx#L60-L66) |
-| 重試不得重複扣款 | 未驗證 | 需確認後端去重行為，見 P0 待驗證疑慮 |
+| 重試不得重複扣款 | 未驗證 | 需確認後端去重行為，見 F1 |
 
 ### 已檢查維度
 
@@ -70,9 +98,9 @@
 | 檢查 | 結果 | 備註 |
 | --- | --- | --- |
 | CI（`gh pr checks 482`） | 全部通過 | 針對 head `a1b2c3d4e5f6` |
-| ESLint（變更檔） | 未執行 | 目前 checkout 為 `main`，不是 head |
-| React Doctor | 未執行 | 同上 |
-| 型別檢查 | 未執行 | 同上；CI 已包含型別檢查且通過 |
+| Vitest（`checkoutMachine.test.ts`、`useCart.test.ts`） | 12 項全部通過 | 以 `git archive a1b2c3d4e5f6` 匯出 head 至暫存目錄執行，`node_modules` 以 symlink 共用、快取指向匯出目錄，依賴宣告與 head 相同，`node_modules/.vite` 前後無變動 |
+| ESLint（6 個變更檔） | 0 個問題 | 同上，在 head 匯出目錄執行 |
+| 型別檢查 | 未執行 | CI 已包含型別檢查且通過 |
 
 ### 未驗證項目
 

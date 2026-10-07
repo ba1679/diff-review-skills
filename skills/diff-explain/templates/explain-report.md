@@ -1,61 +1,55 @@
 # {{REPORT_KIND}}：{{CHANGE_TITLE}}
 
-> 報告狀態：{{REPORT_STATUS}}
+**{{REPORT_STATUS}}**｜`{{BASE_REF}}` ← `{{HEAD_REF}}`（`{{HEAD_SHA_SHORT}}`）｜{{FILE_COUNT}} 檔 +{{ADDITIONS}}／−{{DELETIONS}}
 
-## 比較範圍
+## 一句話
 
-| 項目 | 內容 |
-| --- | --- |
-| Repository | {{REPO_NAME}}（`{{REPO_PATH}}`） |
-| Base | `{{BASE_REF}}` → `{{BASE_SHA_SHORT}}`（{{BASE_SOURCE}}） |
-| Head | `{{HEAD_REF}}` → `{{HEAD_SHA_SHORT}}`（{{HEAD_SOURCE}}） |
-| Merge-base | `{{MERGE_BASE_SHA_SHORT}}` <!-- 兩點比較且沒有共同祖先時寫「（無共同祖先）」 --> |
-| 比較方式 | {{COMPARE_MODE}}：`{{DIFF_COMMAND}}` |
-| 未提交改動 | {{UNCOMMITTED_STATUS}} |
-| 規模 | {{FILE_COUNT}} 個檔案，+{{ADDITIONS}} / -{{DELETIONS}}，{{COMMIT_COUNT}} 個 commit |
-| PR | {{PR_ROLE}} |
-| 需求來源 | {{REQUIREMENT_SOURCES}} |
-| 備註 | {{SCOPE_NOTES}} |
+{{ONE_LINE_SUMMARY}}
 
-## 1. 改動摘要
-
-**一句話**：{{ONE_LINE_SUMMARY}}
-
-### 改動群組
-
-| 群組 | 類型 | 主要檔案 |
-| --- | --- | --- |
-| {{GROUP_NAME}} | {{GROUP_TYPE}} | {{GROUP_FILES}} |
-
-<!-- 各群組複製對應區塊，無對應群組時刪除區塊。必要性、不改的後果僅在提供額外資訊時保留；重構的「尚未證實」僅在有影響結論的重要未驗證事項時保留。 -->
-### {{GROUP_NAME}}（{{GROUP_TYPE}}）
-
-- 目的：{{GROUP_PURPOSE}}
-- 證據：{{GROUP_EVIDENCE}}
-- 必要性：{{GROUP_NECESSITY}}
-- 不改的後果：{{GROUP_CONSEQUENCE}}
-
-### {{REFACTOR_GROUP_NAME}}（重構）
-
-- 目的：{{REFACTOR_PURPOSE}}
-- 預期一致的行為：{{EXPECTED_INVARIANTS}}
-- 支持證據：{{INVARIANT_EVIDENCE}}
-- 尚未證實：{{UNVERIFIED_INVARIANTS}}
-- 必要性：{{REFACTOR_NECESSITY}}
-- 不改的後果：{{REFACTOR_CONSEQUENCE}}
-
-## 2. 圖解改動
-
-<!-- 依規則不需要畫圖時，只保留下一行並刪除其餘圖表區塊；需要畫圖時刪除下一行 -->
+<!-- 依規則選圖：用不到的圖連同標題刪除，保留的圖依序編號；完全不畫圖時只保留下一行，並刪除所有圖的區塊；畫圖時刪除下一行 -->
 本次不繪圖：{{NO_DIAGRAM_REASON}}
 
-### {{DIAGRAM_TITLE}}
+## 圖 1：{{BEFORE_AFTER_TITLE}}
 
 ```mermaid
-{{MERMAID_DIAGRAM}}
+%%{init: {"themeVariables": {"clusterBkg": "#ffffff", "clusterBorder": "#cbd5e1"}}}%%
+flowchart TB
+  subgraph b_["修改前"]
+    direction LR
+    {{BEFORE_FLOW}}
+  end
+  subgraph a_["修改後"]
+    direction LR
+    {{AFTER_FLOW}}
+  end
+  b_ ~~~ a_
+  {{BEFORE_AFTER_CLASS_DEFINITIONS}}
 ```
 
-<!-- 使用樣式區分類型時保留圖例 -->
-圖例：{{DIAGRAM_LEGEND}}
+{{BEFORE_AFTER_CAPTION}}
 
-{{DIAGRAM_EXPLANATION}}
+## 圖 2：改動地圖
+
+```mermaid
+flowchart LR
+  {{CHANGE_MAP}}
+  {{CHANGE_MAP_CLASS_DEFINITIONS}}
+```
+
+{{CHANGE_MAP_CAPTION}}
+
+## 圖 3：{{KEY_BEHAVIOR_TITLE}}
+
+```mermaid
+{{KEY_BEHAVIOR_DIAGRAM}}
+```
+
+{{KEY_BEHAVIOR_CAPTION}}
+
+## 改動群組
+
+| 群組 | 類型 | 改了什麼 |
+| --- | --- | --- |
+| {{GROUP_NAME}} | {{GROUP_TYPE}} | {{GROUP_CHANGE}} |
+
+> 比較範圍與逐項證據在 `{{DETAIL_FILE}}`，需要追查時再看。
