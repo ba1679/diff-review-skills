@@ -12,11 +12,13 @@ brief 內容經 stdin 傳給 `codex exec --json --sandbox read-only`。Codex 的
 - capacity（模型過載）：等待後以 `codex exec resume` 接續同一個 session 重試一次，再依序改用
   --fallback-model 或環境變數 DIFF_REVIEW_CODEX_FALLBACK_MODELS（以逗號分隔）指定的模型接續；
   仍失敗時回報 capacity，並在 model_candidates 列出 Codex 模型目錄中尚未嘗試的模型。
+- model_unsupported（此帳號不支援該模型）：不重試同一模型，直接依序改用備援模型；
+  沒有備援或都失敗時回報 model_unsupported，同樣列出 model_candidates。
 - transient（連線中斷、伺服器錯誤、速率限制）：等待後接續同一個 session 重試。
 - 其他錯誤（未登入、用量上限、context 超限等）：不重試，直接回報原因（reason）與建議（action）。
 接續前會從 session 紀錄確認每一輪的 sandbox 皆為 read-only；找不到紀錄時不接續，改為從頭執行。
 --timeout 是含重試與等待的整體時間上限。使用者選定模型後，以 --resume <session_id> --model <模型>
-接續先前的 session；搭配同一個 --out-dir 時，沿用先前的嘗試紀錄。
+接續先前的 session；沒有 session 時只帶 --model 重跑。搭配同一個 --out-dir 時，沿用先前的嘗試紀錄。
 status 為 completed 以外的值時以非零 exit code 結束。
 """
 
@@ -56,6 +58,8 @@ ERROR_CODES = {
 }
 # 只用來比對錯誤事件的訊息；Codex 的執行紀錄含受審程式碼，不可拿來比對。
 ERROR_PATTERNS = [
+    ("model_unsupported", re.compile(r"model is not supported|not supported when using|model_not_found|"
+                                     r"model .* does not exist|unknown model|invalid model", re.IGNORECASE)),
     ("capacity", re.compile(r"at capacity|overloaded", re.IGNORECASE)),
     ("usage_limit", re.compile(r"usage limit|quota", re.IGNORECASE)),
     ("context_limit", re.compile(r"context window|context length", re.IGNORECASE)),
@@ -68,6 +72,11 @@ OUTCOMES = {
         "模型容量不足，等待、接續與備援模型都無法完成。",
         "請使用者從 model_candidates 選擇模型後，加上 --resume {session} --model <模型> 接續；"
         "也可設定 DIFF_REVIEW_CODEX_FALLBACK_MODELS，讓之後自動改用備援模型。",
+    ),
+    "model_unsupported": (
+        "此帳號不支援目前的 Codex 模型，也沒有可用的備援模型。",
+        "請使用者從 model_candidates 選擇模型後，加上 --resume {session} --model <模型> 接續（沒有 session 時只加 --model 重跑）；"
+        "也可改 ~/.codex/config.toml 的預設模型，或設定 DIFF_REVIEW_CODEX_FALLBACK_MODELS。",
     ),
     "transient": ("連線中斷或伺服器暫時錯誤，重試後仍失敗。", "確認網路後，加上 --resume {session} 接續。"),
     "auth": ("Codex 未登入或登入已失效。", "執行 `codex login` 後重跑。"),
@@ -193,23 +202,46 @@ def classify(result: dict, code: str | None, messages: list[str]) -> str:
         return "ok"
     if code in ERROR_CODES:
         return ERROR_CODES[code]
+    text = "\n".join(messages)
+    if ERROR_PATTERNS[0][1].search(text):
+        return ERROR_PATTERNS[0][0]
     if code and code != "other":
         return "failed"
-    text = "\n".join(messages)
     for kind, pattern in ERROR_PATTERNS:
         if pattern.search(text):
             return kind
     return "failed"
 
 
+def configured_model() -> str | None:
+    """讀取 Codex 設定檔的預設模型，供 session 紀錄沒有模型名稱時記錄嘗試過的模型。"""
+    config = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex") / "config.toml"
+    try:
+        lines = config.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        if line.lstrip().startswith("["):
+            return None
+        match = re.match(r'\s*model\s*=\s*"([^"]+)"', line)
+        if match:
+            return match.group(1)
+    return None
+
+
 def model_candidates(codex: str, tried: set) -> list[dict]:
+    """列出 Codex 模型目錄中尚未嘗試的模型；指令失敗時改讀 Codex 的模型快取。"""
     try:
         result = subprocess.run(
             [codex, "debug", "models"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60
         )
         models = json.loads(result.stdout).get("models", [])
     except (OSError, subprocess.SubprocessError, ValueError, AttributeError):
-        return []
+        cache = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex") / "models_cache.json"
+        try:
+            models = json.loads(cache.read_text(encoding="utf-8")).get("models", [])
+        except (OSError, ValueError, AttributeError):
+            return []
     listed = [m for m in models if isinstance(m, dict) and m.get("visibility") == "list" and m.get("slug") not in tried]
     listed.sort(key=lambda m: m.get("priority", 999))
     return [{"model": m["slug"], "name": m.get("display_name", m["slug"])} for m in listed]
@@ -225,7 +257,7 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=2400, help="含重試與等待的整體時間上限秒數（預設 2400）")
     parser.add_argument("--model", help="指定 Codex 模型；未指定時使用 Codex 設定的預設值")
     parser.add_argument("--fallback-model", action="append", default=[],
-                        help="容量不足且同一模型重試仍失敗時依序改用的模型，可重複指定")
+                        help="容量不足且同一模型重試仍失敗、或模型不支援時依序改用的模型，可重複指定")
     parser.add_argument("--resume", metavar="SESSION_ID", help="接續先前因錯誤中斷的 session")
     args = parser.parse_args()
 
@@ -243,7 +275,7 @@ def main() -> int:
     status_path = out_dir / "codex.status.json"
 
     previous = []
-    if args.resume and status_path.is_file():
+    if status_path.is_file():
         try:
             previous = json.loads(status_path.read_text(encoding="utf-8")).get("attempts", [])
         except (ValueError, AttributeError):
@@ -315,8 +347,9 @@ def main() -> int:
         return command + ["-"]
 
     brief_text = brief.read_text(encoding="utf-8")
-    capacity_plan = [(args.model, wait) for wait in CAPACITY_WAITS] + [(m, FALLBACK_WAIT) for m in fallbacks]
-    transient_plan = [(None, wait) for wait in TRANSIENT_WAITS]
+    capacity_waits = list(CAPACITY_WAITS)
+    transient_waits = list(TRANSIENT_WAITS)
+    fallback_queue = list(fallbacks)
     model = args.model
     started = time.monotonic()
     deadline = started + args.timeout
@@ -345,7 +378,7 @@ def main() -> int:
         outcome = "unsafe_sandbox" if unsafe else classify(result, turns["code"], messages)
         status["attempts"].append({
             "kind": "resume" if resuming else "exec",
-            "model": turns["models"][-1] if turns["models"] else model,
+            "model": turns["models"][-1] if turns["models"] else model or configured_model(),
             "elapsed_seconds": result["elapsed"],
             "result": outcome,
             "error_code": turns["code"],
@@ -354,16 +387,19 @@ def main() -> int:
         with log_path.open("a", encoding="utf-8") as log:
             log.write(f"===== attempt {len(status['attempts'])}（{status['attempts'][-1]['kind']}）=====\n"
                       f"{result['stdout']}\n--- stderr ---\n{result['stderr']}\n\n")
-        plan = {"capacity": capacity_plan, "transient": transient_plan}.get(outcome)
-        if not plan:
+        if outcome == "transient" and transient_waits:
+            next_model, wait = model, transient_waits.pop(0)
+        elif outcome == "capacity" and capacity_waits:
+            next_model, wait = model, capacity_waits.pop(0)
+        elif outcome in ("capacity", "model_unsupported") and fallback_queue:
+            next_model, wait = fallback_queue.pop(0), FALLBACK_WAIT
+        else:
             break
-        next_model, wait = plan.pop(0)
         if deadline - time.monotonic() - wait < MIN_ATTEMPT_SECONDS:
             out_of_time = True
             break
         time.sleep(wait)
-        if outcome == "capacity":
-            model = next_model
+        model = next_model
 
     has_output = partial.is_file() and partial.read_text(encoding="utf-8", errors="replace").strip() != ""
     if outcome == "ok":
@@ -377,7 +413,7 @@ def main() -> int:
     reason, action = OUTCOMES[state]
     if out_of_time:
         reason += "（剩餘時間不足，未再重試）"
-    if state == "capacity":
+    if state in ("capacity", "model_unsupported"):
         tried = {attempt.get("model") for attempt in status["attempts"]}
         status["model_candidates"] = model_candidates(codex, tried)
     status.update(

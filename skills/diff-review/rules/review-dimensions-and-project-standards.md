@@ -139,7 +139,8 @@ OrderCard 和 CartItem 有重複的 JSX，應該抽成共用元件。其他看�
 
 - Level: `MUST`
 - 工具的分數、警告數量或「通過」不等於審查結論；每個工具發現仍要經過 finding 判定。
-- 只在工具結果能代表 head 時執行會掃描工作目錄的工具：目前 checkout 等於 head SHA 且沒有未提交改動（或本次已納入未提交改動）。否則標示「未執行：工作目錄不是 head」。
+- 只在工具結果能代表 head 時執行會掃描工作目錄的工具：目前 checkout 等於 head SHA 且沒有未提交改動（或本次已納入未提交改動）。
+- 目前 checkout 不是 head 時，可用 `git archive <head SHA>` 把 head 匯出到受審 repo 之外的暫存目錄再執行；需要前後比較時，base 同樣匯出一份。依賴目錄（例如 `node_modules`）可用 symlink 共用，但要比對依賴宣告與 head 是否一致並揭露差異；工具快取會經由 symlink 寫進受審 repo，執行時關閉快取或把快取目錄指到匯出目錄，並比對依賴目錄內快取（例如 `node_modules/.cache`、`node_modules/.vite`）的前後狀態。無法這樣做時標示「未執行：工作目錄不是 head」。
 - 針對變更檔、改動行及已追讀的受影響消費端執行檢查，例如對變更檔執行 ESLint、以 `--scope lines` 執行 React Doctor；型別錯誤依與本次改動的因果關係篩選，不因位置在 diff 外就丟棄，再依 finding 規則判定。除非使用者要求，不整包重跑測試或全庫 lint。
 - 工具需要下載或安裝（例如 `npx <package>@latest`）時，先徵得使用者同意。
 - 只使用不寫入受審 repo 的選項，例如 `tsc --noEmit --incremental false`、`eslint --no-cache`；不可使用 `--fix`、`-u` 或任何會更新快照、快取、報告目錄的選項。執行前後以 `git --no-optional-locks status --porcelain --ignored` 比對（含被忽略的快取檔），有新增或修改的檔案時必須揭露。

@@ -1,8 +1,8 @@
-## 3. 建議修正
+## 建議修正
 
 ### P{{SEVERITY_LEVEL}} {{SEVERITY_LABEL}}
 
-#### [P{{SEVERITY_LEVEL}}] {{FINDING_TITLE}}
+#### F{{FINDING_NUMBER}} [P{{SEVERITY_LEVEL}}] {{FINDING_TITLE}}
 
 - 狀態：{{FINDING_STATUS}}
 - 提出者：{{FINDING_SOURCES}}
@@ -12,11 +12,12 @@
 - 證據：{{EVIDENCE}}
 - 檢查指令：`{{VERIFY_COMMAND}}`
 - 位置：{{LOCATION_LINKS}}
+- 圖上節點：{{DIAGRAM_NODE}}
 - 依據規範：{{STANDARD_REFERENCE}}
 - 最小修正方向：{{MINIMAL_FIX}}
 - 備註：{{FINDING_NOTES}}
 
-## 4. 審查涵蓋與驗證限制
+## 審查涵蓋與驗證限制
 
 ### 需求符合度
 
