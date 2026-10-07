@@ -91,10 +91,10 @@ flowchart TD
 
 | 等級 | 問題 | 建議 | 詳細 |
 | --- | --- | --- | --- |
-| P0 | 逾時後重試可能重複扣款（待驗證） | 確認後端是否支援 `Idempotency-Key`，支援就在重試帶同一把鍵 | F1 |
-| P1 | 逾時錯誤仍會清空購物車 | 逾時也進入 `error` 狀態，不呼叫 `clearCart()` | F2 |
-| P2 | 新增的 `formatPrice` 與既有 `formatCurrency` 重複 | 改用 `formatCurrency` | F3 |
-| P3 | `RETRY` 事件以型別斷言送出 | 把 `RETRY` 加入 `CheckoutEvent` | F4 |
+| P0 | 逾時後重試可能重複扣款（待驗證） | 確認後端是否支援 `Idempotency-Key`，支援就在重試帶同一把鍵 | [F1](detail.md#f1) |
+| P1 | 逾時錯誤仍會清空購物車 | 逾時也進入 `error` 狀態，不呼叫 `clearCart()` | [F2](detail.md#f2) |
+| P2 | 新增的 `formatPrice` 與既有 `formatCurrency` 重複 | 改用 `formatCurrency` | [F3](detail.md#f3) |
+| P3 | `RETRY` 事件以型別斷言送出 | 把 `RETRY` 加入 `CheckoutEvent` | [F4](detail.md#f4) |
 
 ## 待確認
 

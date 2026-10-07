@@ -163,9 +163,12 @@ def parse_events(stdout: str) -> tuple[str | None, list[str]]:
     return thread_id, messages
 
 
+def codex_home() -> Path:
+    return Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
+
+
 def find_rollout(session_id: str) -> Path | None:
-    home = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
-    matches = sorted(home.glob(f"sessions/*/*/*/rollout-*{session_id}.jsonl"))
+    matches = sorted(codex_home().glob(f"sessions/*/*/*/rollout-*{session_id}.jsonl"))
     return matches[-1] if matches else None
 
 
@@ -215,7 +218,7 @@ def classify(result: dict, code: str | None, messages: list[str]) -> str:
 
 def configured_model() -> str | None:
     """讀取 Codex 設定檔的預設模型，供 session 紀錄沒有模型名稱時記錄嘗試過的模型。"""
-    config = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex") / "config.toml"
+    config = codex_home() / "config.toml"
     try:
         lines = config.read_text(encoding="utf-8").splitlines()
     except OSError:
@@ -237,7 +240,7 @@ def model_candidates(codex: str, tried: set) -> list[dict]:
         )
         models = json.loads(result.stdout).get("models", [])
     except (OSError, subprocess.SubprocessError, ValueError, AttributeError):
-        cache = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex") / "models_cache.json"
+        cache = codex_home() / "models_cache.json"
         try:
             models = json.loads(cache.read_text(encoding="utf-8")).get("models", [])
         except (OSError, ValueError, AttributeError):

@@ -51,6 +51,7 @@ F2 [P1] 逾時仍清空購物車（提出者：草稿、Codex；多方佐證）
 
 - Level: `MUST`
 - 先把 `draft.md` 複製為 `final.md`、`detail.md` 複製為 `final-detail.md`，再用 Edit 局部修改；不重新輸出整份報告，也不手動重抄 reviewer 的原始結果。
+- 把 `final.md` 問題表中的詳細檔連結改指向 `final-detail.md` 的對應 finding 錨點；合併或排除時同步更新連結，確認每個連結都能定位到保留的 finding。
 - 查證屬實的圖、群組與說明問題直接修正；finding 新增、合併、改級或排除時，同步修改 `final-detail.md` 的 finding、`final.md` 的問題表、狀態列的各級數量，以及圖上的標籤與 class。證據標記與變更／影響範圍依 `criteria` 校正，不以文末勘誤保留錯誤版本。
 - 新增的 finding 依 findings 樣板的欄位寫入 `final-detail.md`，提出者標 Subagent 或 Codex。
 - 不符合 `criteria` 的意見排除，依結果樣板在 `final-detail.md` 記錄數量與類型；偏好類不必逐條列出。
@@ -61,7 +62,7 @@ F2 [P1] 逾時仍清空購物車（提出者：草稿、Codex；多方佐證）
 
 ```md
 複製：draft.md → final.md；detail.md → final-detail.md
-Edit final.md：圖 2 的 summary 由 changedMajor 改為 changedMinor，標籤「⚠ P2」改為「· P3」；問題表 F3 改為 P3；狀態列 P2 1→0、P3 1→2
+Edit final.md：圖 2 的 summary 由 changedMajor 改為 changedMinor，標籤「⚠ P2」改為「· P3」；問題表 F3 改為 P3，詳細連結改為 [F3](final-detail.md#f3)；狀態列 P2 1→0、P3 1→2
 Edit final-detail.md：F3 的嚴重性改為 P3 並寫明理由；排除 3 項：不成立 1、個人偏好 2
 ```
 
@@ -85,7 +86,7 @@ Edit final-detail.md：F3 的嚴重性改為 P3 並寫明理由；排除 3 項�
 - 缺口具體，符合條件的疑慮仍可見。
 
 ```md
-final.md 問題表：P0 逾時後重試可能重複扣款（待驗證）｜F1
+final.md 問題表：P0 逾時後重試可能重複扣款（待驗證）｜[F1](final-detail.md#f1)
 final.md 待確認：後端訂單 API 會不會以冪等鍵去重？（決定 F1 是否成立）
 final-detail.md 待確認：前端未帶冪等鍵；Codex 主張後端去重，但未提供證據；需後端 API 文件或測試環境重現；參見 F1。
 ```

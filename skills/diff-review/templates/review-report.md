@@ -17,7 +17,7 @@
 <!-- 沒有 finding 時，本節只寫「未發現需修正的問題。」。日後把問題留成 PR 草稿留言時，可把「詳細」改為留言連結；送出 review 前只有本人看得到 -->
 | 等級 | 問題 | 建議 | 詳細 |
 | --- | --- | --- | --- |
-| P{{SEVERITY_LEVEL}} | {{FINDING_SHORT_TITLE}} | {{FIX_SHORT}} | F{{FINDING_NUMBER}} |
+| P{{SEVERITY_LEVEL}} | {{FINDING_SHORT_TITLE}} | {{FIX_SHORT}} | [F{{FINDING_NUMBER}}]({{DETAIL_FILE}}#f{{FINDING_NUMBER}}) |
 
 ## 待確認
 
