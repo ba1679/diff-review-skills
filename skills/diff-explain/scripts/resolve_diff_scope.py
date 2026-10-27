@@ -436,7 +436,7 @@ def build_scope(args: argparse.Namespace) -> dict:
         write_pr_markdown(pr_path, pr)
 
     return {
-        "schema": 2,
+        "schema": 3,
         "run_id": run_id,
         "run_dir": str(run_dir),
         "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -473,10 +473,15 @@ def build_scope(args: argparse.Namespace) -> dict:
             "diff": str(diff_path),
             "pr": str(pr_path) if pr_path else None,
             "draft": str(run_dir / "draft.md"),
+            "detail": str(run_dir / "detail.md"),
+            "review_meta": str(run_dir / "review-agent.json"),
+            "review": str(run_dir / "review-agent.md"),
             "brief": str(run_dir / "reviewer-brief.md"),
             "final": str(run_dir / "final.md"),
+            "final_detail": str(run_dir / "final-detail.md"),
             "reviews_dir": f"{run_dir}.reviews",
         },
+        "tools": {"render_mermaid": str(SKILL_DIR / "scripts" / "render_mermaid.py")},
         "requirement_sources": [str(pr_path)] if pr_path else [],
         "standards_sources": [],
         "criteria": [str(path) for path in CRITERIA],
