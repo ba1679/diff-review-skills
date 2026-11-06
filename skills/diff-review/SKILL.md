@@ -24,5 +24,5 @@ description: 以固定 SHA 的程式碼證據，對 GitHub PR、分支或版本�
 
 ## Phase 3 -- 雙重複核並交付
 
-1. DELEGATE 呼叫 `/diff-crosscheck`，交付執行目錄，取得統整後的最終報告；若 `diff-crosscheck` 未安裝，向使用者說明缺少的複核並提示安裝，把草稿狀態列改為「未經獨立複核」後交付。
+1. DELEGATE 呼叫 `/diff-crosscheck`，交付執行目錄與 Codex CLI 模型（使用者未指定時預設 `gpt-6-astra`），取得統整後的最終報告；若 `diff-crosscheck` 未安裝，向使用者說明缺少的複核並提示安裝，把草稿狀態列改為「未經獨立複核」後交付。
 2. WRITE 只回傳統整後的最終報告與詳細檔路徑。
