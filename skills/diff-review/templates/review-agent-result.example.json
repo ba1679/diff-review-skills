@@ -6,6 +6,9 @@
   "requirement_sources": ["openspec/changes/keep-cart-on-failure/specs/checkout/spec.md"],
   "criteria": [
     "/Users/dev/.agents/skills/diff-review/rules/review-dimensions-and-project-standards.md",
-    "/Users/dev/.agents/skills/diff-review/rules/severity-and-findings.md"
+    "/Users/dev/.agents/skills/diff-review/rules/severity-and-findings.md",
+    "/Users/dev/.agents/skills/diff-review/rules/react-conventions.md",
+    "/Users/dev/.agents/skills/diff-review/rules/vercel-review-guides.md",
+    "/Users/dev/.agents/skills/vercel-react-best-practices/rules/rerender-functional-setstate.md"
   ]
 }

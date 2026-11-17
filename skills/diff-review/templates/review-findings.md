@@ -34,6 +34,14 @@
 - 已讀規範：{{STANDARDS_READ}}
 - 探索到但未逐條比對：{{STANDARDS_DISCOVERED_ONLY}}
 
+### 外部指南（未觸發時註明原因並省略下表）
+
+- 環境依據：{{FRAMEWORK_VERSION_AND_CONFIG_EVIDENCE}}
+
+| 來源與索引位置 | 觸發主題／狀態 | 採用的 rule 絕對路徑 | 內容 SHA-256 | 缺漏或限制 |
+| --- | --- | --- | --- | --- |
+| {{EXTERNAL_GUIDE_SOURCE}} | {{EXTERNAL_GUIDE_SCOPE_AND_STATUS}} | {{EXTERNAL_RULE_ABSOLUTE_PATH}} | {{EXTERNAL_RULE_SHA256}} | {{EXTERNAL_GUIDE_LIMITS}} |
+
 ### 已執行檢查
 
 | 檢查 | 結果 | 備註 |

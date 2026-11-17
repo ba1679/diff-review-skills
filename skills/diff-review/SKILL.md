@@ -7,6 +7,8 @@ description: 以固定 SHA 的程式碼證據，對 GitHub PR、分支或版本�
 
 串接改動理解、審查與獨立雙重複核，只回傳統整後的最終報告；審查標準以受審 repo 自身規範為準，本 skill 提供通用基準，所有人類可讀輸出使用繁體中文。
 
+React／Next.js 改動按需採用另行安裝的 `vercel-react-best-practices` 與 `vercel-composition-patterns`，補充效能與元件設計判準；缺少來源時揭露涵蓋限制，不阻止既有審查。
+
 文中的 `agents/`、`rules/`、`templates/` 路徑皆相對於本 skill 目錄。
 
 # SOP
@@ -17,7 +19,7 @@ description: 以固定 SHA 的程式碼證據，對 GitHub PR、分支或版本�
 
 ## Phase 2 -- 完成有證據的審查
 
-1. DELEGATE 啟動全新 context、能寫檔的 review agent，交付 `agents/review-agent.md` 的絕對路徑、執行目錄、使用者需求／驗收條件原文與審查要求，以及已知的完整需求或切片說明（未知就註明），請它唯讀初審，並把結果寫入 `run.json` 的 `artifacts.review_meta` 與 `artifacts.review`。
+1. DELEGATE 啟動全新 context、能寫檔的 review agent，交付 `agents/review-agent.md` 的絕對路徑、執行目錄、使用者需求／驗收條件原文與審查要求、已知的完整需求或切片說明，以及宿主清單中兩個 Vercel skill 的安裝位置（各項未知就註明），請它唯讀初審，並把結果寫入 `run.json` 的 `artifacts.review_meta` 與 `artifacts.review`。
 2. READ 讀取 `rules/review-agent-handoff.md`，依規則驗收兩個結果檔；缺少 subagent 能力、agent 未完成或交接不合格時，揭露原因並停止。
 3. WRITE 依已載入規則把審查內容附加到 `detail.md` 並更新 `run.json`，再讀取 `templates/review-report.md`，依骨架與規則在 `draft.md` 疊上初審結果；格式有疑問時才參照 `templates/review-report.example.md`。
 4. DELEGATE 執行 `uv run <run.json 的 tools.render_mermaid> --report <draft.md>` 渲染檢查，依已載入的圖表規則修正到通過。
