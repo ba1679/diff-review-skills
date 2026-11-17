@@ -14,7 +14,7 @@
 ## 審查流程
 
 1. READ 讀取執行目錄的 `run.json`、其指向的 `diff.patch`、`draft.md` 與 `detail.md`，以及 `criteria` 中的 `evidence-and-reading-scope.md`；依證據規則核對固定範圍與資料。上游說明與圖解的判準留給後續複核；必要輸入缺漏、範圍不一致或核心審查無法完成時，以未完成狀態交付並寫明原因。
-2. READ 讀取 `rules/review-dimensions-and-project-standards.md`，探索受審 repo 自身規範與需求來源，判定適用維度並按需執行工具檢查；diff 含 React 元件或 hook 時，另讀取 `rules/react-conventions.md`。版本讀取與未提交改動的引用方式依已載入的證據規則。
+2. READ 讀取 `rules/review-dimensions-and-project-standards.md`，探索受審 repo 自身規範與需求來源，判定適用維度並按需執行工具檢查；diff 含 React 元件或 hook 時，另讀取 `rules/react-conventions.md`；涉及 React／Next.js 程式碼、依賴、設定，或會影響其行為的共用資料取得與匯入路徑時，讀取 `rules/vercel-review-guides.md`，確認環境、選讀適用的外部原始規則並比對改動。版本讀取與未提交改動的引用方式依已載入的證據規則。
 3. THINK 讀取 `rules/severity-and-findings.md`，對照觸發路徑、修改前版本與需求，逐條判定 finding 是否成立、嚴重性、確定程度，以及對應 `draft.md` 圖中的哪個節點。
 4. WRITE 讀取 `templates/review-findings.md`，依骨架把「建議修正」與「審查涵蓋與驗證限制」寫入 `artifacts.review`；格式有疑問時才參照 `templates/review-findings.example.md`。提出者填「草稿」；無 finding 時依已載入規則省略空級別並保留審查涵蓋。
 5. WRITE 讀取 `rules/review-agent-handoff.md` 與 `templates/review-agent-result.json`，依交接規則把 metadata 寫入 `artifacts.review_meta`；格式有疑問時才參照 `templates/review-agent-result.example.json`。交付前再依已載入證據規則核對未提交範圍，回覆只簡述完成狀態、finding 數量與兩個檔案路徑。

@@ -93,6 +93,15 @@
 - 已讀規範：`AGENTS.md`、`.cursor/rules/a11y.mdc`、`.eslintrc.cjs`（判斷工具已強制的項目）
 - 探索到但未逐條比對：`.claude/skills/frontend-standards/SKILL.md`（與本次改動無直接相關）
 
+### 外部指南
+
+- 環境依據：head `package.json` 的 React 宣告與 lockfile 解析版本為 18.3.1；`src/checkout/CheckoutPage.tsx` 使用 React hooks，沒有 Next.js 依賴。
+
+| 來源與索引位置 | 觸發主題／狀態 | 採用的 rule 絕對路徑 | 內容 SHA-256 | 缺漏或限制 |
+| --- | --- | --- | --- | --- |
+| `vercel-react-best-practices` 1.0.0，`/Users/dev/.agents/skills/vercel-react-best-practices/SKILL.md` | state 更新，已讀全文並比對，未新增 finding | `/Users/dev/.agents/skills/vercel-react-best-practices/rules/rerender-functional-setstate.md` | `f38a1b4ce920d763a849b5210ce6f738db04a8c2e19d6057af326e9b04cd812a`（格式示意，實際須計算） | 未量測效能；未套用 React 19 或 Next.js 專屬建議 |
+| `vercel-composition-patterns` | 未觸發：未改元件 API、變體或共享狀態邊界 | 無 | 無 | 未讀規則全文，不宣稱通過 |
+
 ### 已執行檢查
 
 | 檢查 | 結果 | 備註 |

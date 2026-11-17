@@ -23,11 +23,9 @@
 effect 一直重跑，建議把依賴陣列改成 [] 就不會重複呼叫了。
 ```
 
-# Rule 2 - Effect 只用於與外部系統同步，並要處理競態
+# Rule 2 - Effect 抓取資料必須處理競態與失敗狀態
 
 - Level: `MUST`
-- 可以從 props 或 state 直接算出的值，要在 render 時計算，不可用 effect 同步到另一個 state。
-- 回應使用者操作的邏輯（送出、點擊後的導頁、顯示通知）放在 event handler，不放在監聽 state 的 effect。
 - 在 effect 中抓取資料時，必須處理競態（忽略過期回應或使用 `AbortController`）、loading 與 error 狀態。
 - 不可寫 `useEffect(async () => ...)`；要在 effect 內定義 async 函式再呼叫。
 - effect 鏈（effect A 設 state 觸發 effect B）通常代表邏輯應合併到事件處理或計算中。
@@ -43,11 +41,13 @@ effect 一直重跑，建議把依賴陣列改成 [] 就不會重複呼叫了。
 
 ## Bad Example
 
-- 這個例子是壞的，因為它用 effect 同步可計算的值，製造了多餘的 render 與不同步風險。
+- 這個例子是壞的，因為它把 effect 回呼宣告為 async，無法直接回傳 cleanup 函式。
 
 ```tsx
-const [total, setTotal] = useState(0);
-useEffect(() => { setTotal(items.reduce((s, i) => s + i.price, 0)); }, [items]);
+useEffect(async () => {
+  const orders = await fetchOrders(filter);
+  setOrders(orders);
+}, [filter]);
 ```
 
 # Rule 3 - 有副作用的訂閱與計時都必須清理
@@ -78,9 +78,8 @@ useEffect(() => { setTotal(items.reduce((s, i) => s + i.price, 0)); }, [items]);
 
 - Level: `MUST`
 - 不可把 props 複製進 state（除非刻意作為初始值，並以 `initialX` 之類的名稱表明）；props 改變後 state 不會跟著更新。
-- 同一份資料不可同時存在於多個 state 或 store；衍生資料要由來源計算。
+- 同一份資料不可同時存在於多個 state 或 store。
 - 狀態放在最近的共同祖先；全域 store 只放真正跨頁面共用的資料；伺服器資料與 UI 狀態要分開管理。
-- 新狀態依賴前一個狀態時，要用函式形式更新。
 - 列表的 `key` 要穩定且唯一；項目會重新排序、插入或刪除時不可用 index 當 key；用 `key` 重設元件狀態時要確認是刻意的。
 
 ## Good Example
@@ -130,7 +129,6 @@ useEffect(() => { setTotal(items.reduce((s, i) => s + i.price, 0)); }, [items]);
 - 只有在昂貴計算、昂貴子樹重繪或參照穩定性影響 effect 時，才要求 `useMemo`、`useCallback`、`memo`。
 - `memo` 包住的子元件若每次都收到新的物件或函式 props，memo 不會生效；要指出是哪個 props 破壞了它。
 - Context 的 value 每次 render 都是新物件時，所有 consumer 都會重繪；只有 consumer 多或重繪昂貴時才提出。
-- 依 repo 實際使用的 React 版本判斷建議；不要求未使用的新 API 或遷移。
 
 ## Good Example
 
@@ -153,7 +151,7 @@ useEffect(() => { setTotal(items.reduce((s, i) => s + i.price, 0)); }, [items]);
 
 - Level: `MUST`
 - 違反 React 慣例本身不決定嚴重性；依是否造成錯誤行為、競態、資料錯誤或洩漏判定。
-- 沒有實際影響的慣例偏離，最多列為低嚴重性或不提出。
+- 沒有實際影響的慣例偏離不提出。
 - repo 規範或 lint 已明確允許的寫法，不因本規則提出。
 
 ## Good Example

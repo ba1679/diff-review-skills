@@ -115,6 +115,7 @@ OrderCard 和 CartItem 有重複的 JSX，應該抽成共用元件。其他看�
   - 外部契約：改動涉及 API 呼叫或型別、元件 props、事件 payload、URL 參數、storage schema、i18n key、test id、無障礙角色與名稱、公開函式 → 向後相容、所有消費端（包含依賴角色與名稱定位的測試）是否已同步更新、型別與實際資料形狀是否一致、錯誤碼處理。
   - 資料完整性：改動涉及寫入、刪除或遷移資料 → 不可逆操作是否有確認、部分失敗的處理、重複執行是否冪等。
 - 改動含 React 元件或 hook 時，React 慣例由另一份規則承接，不在此重述。
+- React／Next.js 的效能與元件組合判準由 `vercel-review-guides.md` 承接；既有通用效能維度仍適用其他技術。元件組合在修改 props、變體、provider 或共享狀態邊界時觸發，只有具體維護風險才提出問題。
 
 ## Good Example
 

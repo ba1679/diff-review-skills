@@ -65,6 +65,14 @@ npx skills add ba1679/diff-review-skills@diff-explain
 
 本機開發時，可把 `skills/` 下的三個目錄以 symlink 掛到 agent 的 skills 目錄（例如 `~/.claude/skills/`）。
 
+### React／Next.js 補充指南
+
+`diff-review` 會按 diff 內容與受影響套件版本，選讀另外安裝的 `vercel-react-best-practices` 與 `vercel-composition-patterns`。請讓宿主 skill 清單能定位這兩個 skill，或將它們放在 `diff-review` 的同層 skills 目錄；不需要複製其規則到本 repo。
+
+效能審查涵蓋請求瀑布、bundle、server／client 資料取得、重繪與渲染等適用主題；composition 只在本次改動引入或惡化具體維護風險時提出 finding。指南優先級不直接映射 P0–P3，也不因 boolean props、render props 或既有 API 本身要求重構。React 19、Next.js 與 Compiler 相關建議先確認版本與設定。
+
+只讀適用 rule 的完整原文與範例；已採用的絕對路徑經 `criteria` 傳給兩位複核者，詳細檔記錄環境與內容 SHA-256。缺少指南或個別規則時，既有審查照常進行並揭露涵蓋限制，不自動安裝、不宣稱該面向已通過。
+
 ## 依賴
 
 | 工具 | 是否必要 | 用途 | 缺少時 |

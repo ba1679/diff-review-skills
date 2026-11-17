@@ -4,8 +4,10 @@
 - Agent 把 metadata 寫入 `artifacts.review_meta`（依 `templates/review-agent-result.json`）、審查內容寫入 `artifacts.review`（依 `templates/review-findings.md`），回覆只簡述狀態與路徑。宿主不讓 agent 寫檔時，改由回覆交付兩者的完整內容，主 agent 原樣存成這兩個檔。
 - Metadata 必須是可解析的 JSON，欄位齊備：`run_id` 對應本次執行目錄、`status` 為 `completed` 或 `not_completed`、`reason` 為字串，三個來源／判準欄位為字串陣列。
 - `completed` 代表初審已完成，審查內容須包含建議修正與審查涵蓋章節；沒有 finding 也須交代涵蓋與限制。必要輸入或核心審查未完成時用 `not_completed` 並寫明原因；個別工具或外部來源未驗證時，依審查規則揭露限制。
-- `standards_sources` 只記已讀正文且比對的規範，`requirement_sources` 只記實際讀取的需求檔案；兩者都填純檔案路徑，repo 內用相對路徑，repo 外用絕對路徑。版本註記、只探索適用性的候選及需求原文放在審查章節；需求僅由派發原文提供、沒有來源檔案時，`requirement_sources` 填空陣列。`criteria` 只列本次用於判定程式碼與 findings 的本 skill 規則絕對路徑，包含必讀的 `rules/review-dimensions-and-project-standards.md` 與 `rules/severity-and-findings.md`；React 規則僅在觸發且採用時加入。
+- `standards_sources` 只記已讀正文且比對的規範，`requirement_sources` 只記實際讀取的需求檔案；兩者都填純檔案路徑，repo 內用相對路徑，repo 外用絕對路徑。版本註記、只探索適用性的候選及需求原文放在審查章節；需求僅由派發原文提供、沒有來源檔案時，`requirement_sources` 填空陣列。`criteria` 列本次用於判定程式碼與 findings 的規則絕對路徑，包含必讀的 `rules/review-dimensions-and-project-standards.md` 與 `rules/severity-and-findings.md`；`rules/react-conventions.md`、`rules/vercel-review-guides.md` 與外部原始 rule，僅在觸發、已讀全文且實際採用時加入。外部指南不列為 repo 規範；來源版本、適用環境與採用 rule 的內容 SHA-256 放在審查涵蓋，不變更 metadata schema。
+- 已完成但未發現 finding 的外部檢查仍須登記採用 rule；只讀索引、未涉及或缺漏的 rule 不列入 `criteria`。外部來源缺漏時，驗收其涵蓋限制，不把局部缺漏誤判成整份初審失敗。
 - 主 agent 驗收欄位、執行識別、判準路徑存在、來源路徑可讀（repo 內以固定版本確認）與審查內容完整度：每個 finding 有不重複的 F 編號、樣板的全部欄位與圖上節點；納入未提交改動時，涵蓋章節須交代閱讀前與交付前的範圍核對結果。未完成或不合格時揭露原因並停止，不把部分結果包裝成完成初審。
+- 採用外部 rule 時，另驗收其路徑與涵蓋紀錄一一對應、SHA-256 與實際內容一致，以及 finding 的「外部指南」引用能對應到該檔案；不只驗證路徑存在。內容已變動時，先交回初審重讀重判受影響部分，不直接改雜湊後沿用舊結論。
 - 驗收通過後，以檔案串接把 `artifacts.review` 原文附加到 `detail.md`，不重新輸出內容；`run.json` 的 `report_kind` 設為 `review`，其餘三個來源／判準陣列保留既有項並加入回傳項、去重，固定範圍與其他欄位保持原值。Metadata 不併入報告，初審不計入獨立複核完成度。
 
 ## Good Example
